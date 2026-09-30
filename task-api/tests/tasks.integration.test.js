@@ -207,4 +207,68 @@ describe('Tasks API Integration Tests', () => {
       expect(res.body.error).toMatch(/Task not found/i);
     });
   });
+
+  describe('PATCH /tasks/:id/assign', () => {
+    it('should assign a task and return 200 with updated task', async () => {
+      const task = taskService.create({ title: 'Task to assign' });
+
+      const res = await request(app)
+        .patch(`/tasks/${task.id}/assign`)
+        .send({ assignee: 'Jane Doe' })
+        .expect(200);
+
+      expect(res.body.assignee).toBe('Jane Doe');
+    });
+
+    it('should allow reassignment of an already-assigned task', async () => {
+      const task = taskService.create({ title: 'Task to reassign' });
+      await request(app)
+        .patch(`/tasks/${task.id}/assign`)
+        .send({ assignee: 'Jane Doe' });
+
+      const res = await request(app)
+        .patch(`/tasks/${task.id}/assign`)
+        .send({ assignee: 'John Smith' })
+        .expect(200);
+
+      expect(res.body.assignee).toBe('John Smith');
+      expect(res.body.previousAssignee).toBe('Jane Doe');
+    });
+
+    it('should return 400 if assignee is missing, empty, or whitespace', async () => {
+      const task = taskService.create({ title: 'Task' });
+
+      const res1 = await request(app)
+        .patch(`/tasks/${task.id}/assign`)
+        .send({})
+        .expect(400);
+      expect(res1.body.error).toMatch(/assignee is required/i);
+
+      const res2 = await request(app)
+        .patch(`/tasks/${task.id}/assign`)
+        .send({ assignee: '   ' })
+        .expect(400);
+      expect(res2.body.error).toMatch(/assignee is required/i);
+    });
+
+    it('should return 400 if assignee is not a string', async () => {
+      const task = taskService.create({ title: 'Task' });
+
+      const res = await request(app)
+        .patch(`/tasks/${task.id}/assign`)
+        .send({ assignee: 12345 })
+        .expect(400);
+
+      expect(res.body.error).toMatch(/must be a non-empty string/i);
+    });
+
+    it('should return 404 when assigning a non-existent task', async () => {
+      const res = await request(app)
+        .patch('/tasks/non-existent-id/assign')
+        .send({ assignee: 'Jane Doe' })
+        .expect(404);
+
+      expect(res.body.error).toMatch(/Task not found/i);
+    });
+  });
 });

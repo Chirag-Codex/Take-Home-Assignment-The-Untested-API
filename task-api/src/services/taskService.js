@@ -6,10 +6,12 @@ const getAll = () => [...tasks];
 
 const findById = (id) => tasks.find((t) => t.id === id);
 
+// BUG : substring match instead of exact match
 const getByStatus = (status) => tasks.filter((t) => t.status.includes(status));
 
+// FIXED the bug: 1-based page offset
 const getPaginated = (page, limit) => {
-  const offset = page * limit;
+  const offset = (page - 1) * limit;
   return tasks.slice(offset, offset + limit);
 };
 
@@ -66,9 +68,24 @@ const completeTask = (id) => {
 
   const updated = {
     ...task,
-    priority: 'medium',
+    priority: 'medium', // BUG : overwrites the original priority
     status: 'done',
     completedAt: new Date().toISOString(),
+  };
+
+  const index = tasks.findIndex((t) => t.id === id);
+  tasks[index] = updated;
+  return updated;
+};
+
+const assignTask = (id, assignee) => {
+  const task = findById(id);
+  if (!task) return null;
+
+  const updated = {
+    ...task,
+    previousAssignee: task.assignee || null,
+    assignee,
   };
 
   const index = tasks.findIndex((t) => t.id === id);
@@ -90,5 +107,6 @@ module.exports = {
   update,
   remove,
   completeTask,
+  assignTask,
   _reset,
 };
