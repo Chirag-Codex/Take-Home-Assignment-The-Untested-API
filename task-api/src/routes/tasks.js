@@ -1,29 +1,35 @@
 const express = require('express');
 const router = express.Router();
 const taskService = require('../services/taskService');
-const { validateCreateTask, validateUpdateTask, validateAssignTask } = require('../utils/validators');
+const {
+  validateCreateTask,
+  validateUpdateTask,
+  validateAssignTask,
+} = require('../utils/validators');
+
 
 router.get('/stats', (req, res) => {
   const stats = taskService.getStats();
   res.json(stats);
 });
 
+
 router.get('/', (req, res) => {
   const { status, page, limit } = req.query;
 
-  if (status) {
-    const tasks = taskService.getByStatus(status);
-    return res.json(tasks);
-  }
+  let tasks = status ? taskService.getByStatus(status) : taskService.getAll();
 
   if (page !== undefined || limit !== undefined) {
-    const pageNum = parseInt(page) || 1;
-    const limitNum = parseInt(limit) || 10;
-    const tasks = taskService.getPaginated(pageNum, limitNum);
-    return res.json(tasks);
+    const parsedPage = parseInt(page, 10);
+    const parsedLimit = parseInt(limit, 10);
+
+    const pageNum = Number.isInteger(parsedPage) && parsedPage > 0 ? parsedPage : 1;
+    const limitNum = Number.isInteger(parsedLimit) && parsedLimit > 0 ? parsedLimit : 10;
+
+    const offset = (pageNum - 1) * limitNum;
+    tasks = tasks.slice(offset, offset + limitNum);
   }
 
-  const tasks = taskService.getAll();
   res.json(tasks);
 });
 

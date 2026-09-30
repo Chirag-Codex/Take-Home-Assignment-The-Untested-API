@@ -49,7 +49,8 @@ const update = (id, fields) => {
   const index = tasks.findIndex((t) => t.id === id);
   if (index === -1) return null;
 
-  const updated = { ...tasks[index], ...fields };
+  const { id: _id, createdAt: _createdAt, ...allowedFields } = fields;
+  const updated = { ...tasks[index], ...allowedFields };
   tasks[index] = updated;
   return updated;
 };

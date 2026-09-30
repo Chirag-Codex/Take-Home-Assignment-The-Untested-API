@@ -177,8 +177,24 @@ describe("taskService", () => {
       expect(updated.createdAt).toBe(created.createdAt);
     });
 
+    it("should not allow overwriting id or createdAt even if passed in update fields", () => {
+      const created = taskService.create({ title: "Keep my identity" });
+      const updated = taskService.update(created.id, {
+        title: "Changed",
+        id: "malicious-custom-id",
+        createdAt: "2000-01-01T00:00:00.000Z",
+      });
+
+      expect(updated.id).toBe(created.id);
+      expect(updated.createdAt).toBe(created.createdAt);
+      expect(updated.title).toBe("Changed");
+      expect(taskService.findById(created.id).id).toBe(created.id);
+    });
+
     it("should return null when updating a non-existent task", () => {
-      expect(taskService.update("non-existent-id", { title: "New" })).toBeNull();
+      expect(
+        taskService.update("non-existent-id", { title: "New" }),
+      ).toBeNull();
     });
   });
 
@@ -199,17 +215,20 @@ describe("taskService", () => {
   describe("completeTask", () => {
     // BUG: completeTask resets priority to 'medium'. See BUGS.md.
     // Remove .failing once fixed.
-    it.failing("should mark task status as done, set completedAt, and preserve original priority", () => {
-      const created = taskService.create({
-        title: "High priority task",
-        priority: "high",
-      });
-      const completed = taskService.completeTask(created.id);
+    it.failing(
+      "should mark task status as done, set completedAt, and preserve original priority",
+      () => {
+        const created = taskService.create({
+          title: "High priority task",
+          priority: "high",
+        });
+        const completed = taskService.completeTask(created.id);
 
-      expect(completed.status).toBe("done");
-      expect(completed.completedAt).toBeDefined();
-      expect(completed.priority).toBe("high");
-    });
+        expect(completed.status).toBe("done");
+        expect(completed.completedAt).toBeDefined();
+        expect(completed.priority).toBe("high");
+      },
+    );
 
     it("should set status to done and completedAt", () => {
       const created = taskService.create({ title: "Finish me" });
